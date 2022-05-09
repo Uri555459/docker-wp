@@ -1,0 +1,62 @@
+# Docker Compose version
+# https://docs.docker.com/compose/compose-file/compose-versioning/#compatibility-matrix
+version: '3.8'
+
+services:
+
+  wordpress:
+    container_name: wordpress
+    image: wordpress:5.9.3-php8.1-apache
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: MYSQL_USER
+      WORDPRESS_DB_PASSWORD: MYSQL_PASSWORD
+      WORDPRESS_DB_NAME: MYSQL_DATABASE
+    restart: always
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html/wp-content
+    ports:
+      - 8080:80
+    depends_on:
+      - db
+
+  db:
+    container_name: db
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: MYSQL_ROOT_PASSWORD
+      MYSQL_DATABASE: MYSQL_DATABASE
+      MYSQL_USER: MYSQL_USER
+      MYSQL_PASSWORD: MYSQL_PASSWORD
+    restart: always
+    volumes:
+      - db:/var/lib/mysql
+    ports:
+      - 9906:3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: db
+    restart: always
+    ports:
+      - '8081:80'
+    depends_on:
+      - db
+
+volumes:
+  wordpress:
+  db:
+
+# Резервное копирование базы данных
+# docker exec db mysqldump -u root -p'MYSQL_ROOT_PASSWORD' MYSQL_DATABASE > wordpress-db-backup.sql
+
+# Переменные
+# MYSQL_USER - root
+# MYSQL_PASSWORD - MYSQL_ROOT_PASSWORD
+# MYSQL_DATABASE - MYSQL_DATABASE
+
+# Резервное копирование Wordpress
+# В PowerShell использовать ${pwd}, вместо - $(pwd)
+# docker run --rm --volumes-from wordpress -v $(pwd):/backup wordpress:5.9.3-php8.1-apache tar zcvf /backup/wordpress-files-backup.tar.gz /var/www/html
